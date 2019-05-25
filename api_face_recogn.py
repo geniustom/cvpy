@@ -27,8 +27,9 @@ import lib.v14.pc_util as pu; reload(pu)
 '''	
 
 P1_DEFAULT="face_cache/home.json"
-P2_DEFAULT="queue_folder/home/multi_person.jpg"
-P3_DEFAULT="queue_folder/home/Output.jpg"
+P2_DEFAULT="queue_folder/home/Output.jpg"
+P3_DEFAULT="queue_folder/home/Output_face.jpg"
+fix_wh=200
  
 l={}
 
@@ -158,11 +159,11 @@ def mark_face(img_path,locations,names):
 	oimg=fr.load_image_file(img_path)
 	h,w,c=oimg.shape
 	if h>=w:
-		ratio=w/300
-		img=cv2.resize( oimg, (300, round(h/ratio)),interpolation=cv2.INTER_LINEAR)
+		ratio=w/fix_wh
+		img=cv2.resize( oimg, (fix_wh, round(h/ratio)),interpolation=cv2.INTER_LINEAR)
 	else:
-		ratio=h/300
-		img=cv2.resize( oimg, (round(w/ratio), 300),interpolation=cv2.INTER_LINEAR)
+		ratio=h/fix_wh
+		img=cv2.resize( oimg, (round(w/ratio), fix_wh),interpolation=cv2.INTER_LINEAR)
 
 	for i in range(len(locations)):
 		y1,x1,y2,x2=locations[i]

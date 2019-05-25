@@ -8,6 +8,7 @@ from imp import reload
 import lib.v14.pc_det as pd; reload(pd)
 import lib.v14.pc_util as pu; reload(pu)
 import lib.v14.pc_config as pc; reload(pc)
+import face_recognition as fr
 
 '''
 Note: 
@@ -19,11 +20,12 @@ l={}
 frame_step = 10
 pw,ph=	480,270	 #192,108 #320,180 #144,81 #96,54 #120,68 #160,90 #1280,720 #640,360 #480,270
 conf_threshold = 0.99
+face_score=0.8
 modelFile = "lib/model/opencv_face_detector_uint8.pb"
 configFile = "lib/model/opencv_face_detector.pbtxt"
 net=None
-P1_DEFAULT="./test_video/t10.flv"  #"SWC002s9DYhh_20190307_0292.flv" #"SWC002s9DYhh_20181129_0618.flv" #"SWC002s9DYhh_20190123_0578.flv" "SWC002s9DYhh_20190124_0208"
-P2_DEFAULT="./queue_folder/home/1551490489.jpg"
+P1_DEFAULT="./test_video/t11.flv"  #"SWC002s9DYhh_20190307_0292.flv" #"SWC002s9DYhh_20181129_0618.flv" #"SWC002s9DYhh_20190123_0578.flv" "SWC002s9DYhh_20190124_0208"
+P2_DEFAULT="./queue_folder/home/Output.jpg"
 P3_DEFAULT="6000"
 
 
@@ -34,6 +36,16 @@ def main():
 		api(P1_DEFAULT,P2_DEFAULT,P3_DEFAULT)
 
 
+def ClipBestFace(img): #輸出最適比例的大頭照
+	ah,aw=img.shape[0],img.shape[1]
+	[(t,r,b,l)] = fr.face_locations(img)
+	w,h=r-l,b-t
+	cx,cy=round(l+(w/2)) , round(t+(h/2))
+	ss=round(min(cx,(aw-cx),cy,(ah-cy)/1.5))
+	nimg = img[cy-ss:round(cy+ss*1.5),cx-ss:round(cx+ss)]
+	nimg = cv2.resize( nimg, (200,250),interpolation=cv2.INTER_LINEAR)
+
+	return nimg
 
 def DetBodyFaces(img,oimg,minsize=0,maxsize=0):   #輸出有身體的大頭照
 	imgs=[]
@@ -55,7 +67,8 @@ def DetBodyFaces(img,oimg,minsize=0,maxsize=0):   #輸出有身體的大頭照
 		#body = cv2.resize(oimg[ft:ft+fh,fl:fl+fw],(200,round(fw/fh*300)),interpolation=cv2.INTER_LINEAR) #  INTER_CUBIC INTER_LINEAR INTER_AREA
 		#body = oimg[ft:ft+fh,fl:fl+fw] 
 		body = oimg[max(0,ft):min(oh,ft+fh),max(0,fl):min(ow,fl+fw)] 
-		body = cv2.resize( body, (round(body.shape[1]/2), round(body.shape[0]/2)),interpolation=cv2.INTER_LINEAR)
+		if body.shape[1]>400:
+			body = cv2.resize( body, (round(body.shape[1]/2), round(body.shape[0]/2)),interpolation=cv2.INTER_LINEAR)
 		body = body[:, :, ::-1]
 		#body=oimg[ft:ft+fh,fl:fl+fw]
 		imgs.append(body)
@@ -128,7 +141,7 @@ def api(P1,P2,P3):
 			#print(label)
 			pu.ShowCVVideoIfWinOS(sframe)
 			for img in imgs:	
-				pu.ShowImgIfWinOS(img)
+				#pu.ShowImgIfWinOS(img)
 				totalimgs.append(img)
 			#pu.ShowImgIfWinOS(best_img)
 			#cv2.putText(outOpencvDnn, label, (10,50), cv2.FONT_HERSHEY_SIMPLEX, 1.1, (0, 0, 255), 3, cv2.LINE_AA)
@@ -138,10 +151,12 @@ def api(P1,P2,P3):
 	
 
 		det_time=time.time()
-		have_face,best_img,best_score = pd.DlibGetBestFace(totalimgs,score=0.8,debug=False)
+		have_face,best_img,best_score = pd.DlibGetBestFace(totalimgs,score=face_score,debug=False)
 		if have_face:
 			pu.ShowImgIfWinOS(best_img)
-			pu.SaveImg(best_img,P2)
+			nimg=ClipBestFace(best_img)
+			pu.ShowImgIfWinOS(nimg)
+			pu.SaveImg(nimg,P2)
 	except Exception as e: 
 		errmsg=str(e)	
 		
