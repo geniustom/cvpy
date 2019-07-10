@@ -17,10 +17,10 @@ Note:
 '''
 
 l={}
-frame_step = 10
+frame_step = 1
 pw,ph=	480,270	 #192,108 #320,180 #144,81 #96,54 #120,68 #160,90 #1280,720 #640,360 #480,270
 conf_threshold = 0.99
-face_score=0.8
+face_score=0.5
 modelFile = "lib/model/opencv_face_detector_uint8.pb"
 configFile = "lib/model/opencv_face_detector.pbtxt"
 net=None
