@@ -25,7 +25,7 @@ pw,ph=	192,108	#做motion block的大小
 sw,sh= 960,540	#做FACE DETECTION的大小
 face_score=0.5
 
-P1_DEFAULT="./test_video/t1.flv"  #"SWC002s9DYhh_20190307_0292.flv" #"SWC002s9DYhh_20181129_0618.flv" #"SWC002s9DYhh_20190123_0578.flv" "SWC002s9DYhh_20190124_0208"
+P1_DEFAULT="./test_video/red1.mp4"  #"SWC002s9DYhh_20190307_0292.flv" #"SWC002s9DYhh_20181129_0618.flv" #"SWC002s9DYhh_20190123_0578.flv" "SWC002s9DYhh_20190124_0208"
 P2_DEFAULT="./queue_folder/home/Output.jpg"
 P3_DEFAULT="6000"
 
