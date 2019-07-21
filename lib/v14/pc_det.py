@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import numpy as np
-import cv2,dlib,time
+import cv2,dlib,time,math
 from imp import reload
 import lib.v14.pc_config as pc; reload(pc)
 import lib.v14.pc_util as pu; reload(pu)
@@ -10,6 +10,9 @@ import lib.v14.pc_util as pu; reload(pu)
 detector = dlib.get_frontal_face_detector()
 faceCascade = None
 cvdnn = None
+conf_threshold = 0.99
+modelFile = "lib/model/opencv_face_detector_uint8.pb"
+configFile = "lib/model/opencv_face_detector.pbtxt"
 
 def DlibDetBodyFaces(img,oimg,minsize=0,maxsize=0):   #輸出有身體的大頭照
 	faces=DlibDetFace(img,img)
@@ -94,17 +97,40 @@ def IsPerson(img,level=0,score=0.5):
 	return True
 #'''
 
+
+
 def CvDetBodyFaces(img,oimg,CVscaleFactor=1.1,CVminNeighbors=1,minsize=0,maxsize=0):   #輸出有身體的大頭照
 	tt=time.time()
-	faces=CvDetFace(img,img,CVscaleFactor,CVminNeighbors,minsize,maxsize)
-	ratio=oimg.shape[0]//img.shape[0]
-	imgs,faces=GenImglistFromFace(faces,img,oimg,ratio)
-	#for gg in imgs:
-	#	ShowImgIfWinOS(gg)
+	imgs=[]
+	faces=[]
+	f=CvDetFace(img,img,CVscaleFactor,CVminNeighbors,minsize,maxsize)
+	rt=oimg.shape[0]//img.shape[0]
+	oh,ow=oimg.shape[0],oimg.shape[1]
+	#''' 標準大頭照
+	
+	for (x,y,w,h) in f:
+		fl = (x*rt)-(w*rt)//2
+		ft = (y*rt)-(h*rt)//2
+		#print(f,fl,ft,ow,oh)
+		#if fl<0 or fl>ow or ft<0 or ft>oh: continue #多這行會loss很多frame
+		fw = (w*2*rt)
+		fh = (h*3*rt)
+		
+		#body = cv2.resize(oimg[ft:ft+fh,fl:fl+fw],(pc.SYSTEM_IMG_WIDTH,pc.SYSTEM_IMG_HEIGHT),interpolation=cv2.INTER_LINEAR) #  INTER_CUBIC INTER_LINEAR INTER_AREA
+		#body = cv2.resize(oimg[ft:ft+fh,fl:fl+fw],(200,round(fw/fh*300)),interpolation=cv2.INTER_LINEAR) #  INTER_CUBIC INTER_LINEAR INTER_AREA
+		#body = oimg[ft:ft+fh,fl:fl+fw] 
+		body = oimg[max(0,ft):min(oh,ft+fh),max(0,fl):min(ow,fl+fw)] 
+		if body.shape[1]>400:
+			body = cv2.resize( body, (round(body.shape[1]/2), round(body.shape[0]/2)),interpolation=cv2.INTER_LINEAR)
+		#body = body[:, :, ::-1]
+		#body=oimg[ft:ft+fh,fl:fl+fw]
+		imgs.append(body)
+		faces.append(f)
+
 	pc.TIME_FACE_DET+=(time.time()-tt)
 	return imgs,faces
 
-	
+
 def CvDetFace(img,oimg,CVscaleFactor=1.1,CVminNeighbors=1,minsize=0,maxsize=0):
 	global faceCascade
 	cascPath="./lib/model/lbpcascade_frontalface.xml"  #目前速度最快
@@ -131,23 +157,48 @@ def CvDetFace(img,oimg,CVscaleFactor=1.1,CVminNeighbors=1,minsize=0,maxsize=0):
 	return faces
 
 
-def CvDNNDetFace(img,oimg,CVscaleFactor=1.1,CVminNeighbors=1,minsize=0,maxsize=0):
-	global cvdnn
-	modelFile = "./lib/model/opencv_face_detector_uint8.pb"
-	configFile = "./lib/model/opencv_face_detector.pbtxt"
-	if cvdnn==None:
-		cvdnn = cv2.dnn.readNetFromTensorflow(modelFile, configFile)
-	conf_threshold = 0.7
+def CVDnnDetBodyFaces(img,oimg,minsize=0,maxsize=0):   #輸出有身體的大頭照
+	imgs=[]
+	faces=[]
+	frame,f=CVDnnDetFace(img)
+	rt=oimg.shape[0]//img.shape[0]
+	oh,ow=oimg.shape[0],oimg.shape[1]
+	#''' 標準大頭照
 	
-	frameOpencvDnn = img.copy()
+	for (x,y,w,h) in f:
+		fl = (x*rt)-(w*rt)//2
+		ft = (y*rt)-(h*rt)//2
+		#print(f,fl,ft,ow,oh)
+		#if fl<0 or fl>ow or ft<0 or ft>oh: continue #多這行會loss很多frame
+		fw = (w*2*rt)
+		fh = (h*3*rt)
+		
+		#body = cv2.resize(oimg[ft:ft+fh,fl:fl+fw],(pc.SYSTEM_IMG_WIDTH,pc.SYSTEM_IMG_HEIGHT),interpolation=cv2.INTER_LINEAR) #  INTER_CUBIC INTER_LINEAR INTER_AREA
+		#body = cv2.resize(oimg[ft:ft+fh,fl:fl+fw],(200,round(fw/fh*300)),interpolation=cv2.INTER_LINEAR) #  INTER_CUBIC INTER_LINEAR INTER_AREA
+		#body = oimg[ft:ft+fh,fl:fl+fw] 
+		body = oimg[max(0,ft):min(oh,ft+fh),max(0,fl):min(ow,fl+fw)] 
+		if body.shape[1]>400:
+			body = cv2.resize( body, (round(body.shape[1]/2), round(body.shape[0]/2)),interpolation=cv2.INTER_LINEAR)
+		body = body[:, :, ::-1]
+		#body=oimg[ft:ft+fh,fl:fl+fw]
+		imgs.append(body)
+		faces.append(f)
+
+	return frame,imgs,faces
+
+def CVDnnDetFace(frame):
+	tt=time.time()
+	global cvdnn,conf_threshold
+	if cvdnn==None: 	cvdnn = cv2.dnn.readNetFromTensorflow(modelFile, configFile)
+	frameOpencvDnn = frame.copy()
 	#frameOpencvDnn = cv2.cvtColor(frameOpencvDnn,cv2.COLOR_BGR2GRAY)
 	frameHeight = frameOpencvDnn.shape[0]
 	frameWidth = frameOpencvDnn.shape[1]
-	blob = cv2.dnn.blobFromImage(frameOpencvDnn, 1.5, (256, 144), [104, 117, 123], False, False)
+	blob = cv2.dnn.blobFromImage(frameOpencvDnn, 1.0, (frameWidth, frameHeight), [104, 117, 123], False, False)
 
 	cvdnn.setInput(blob)
 	detections = cvdnn.forward()
-	faces = []
+	bboxes = []
 	for i in range(detections.shape[2]):
 		confidence = detections[0, 0, i, 2]
 		if confidence > conf_threshold:
@@ -155,11 +206,11 @@ def CvDNNDetFace(img,oimg,CVscaleFactor=1.1,CVminNeighbors=1,minsize=0,maxsize=0
 			y1 = int(detections[0, 0, i, 4] * frameHeight)
 			x2 = int(detections[0, 0, i, 5] * frameWidth)
 			y2 = int(detections[0, 0, i, 6] * frameHeight)
-			faces.append([x1, y1, x2, y2])
-			#cv2.rectangle(frameOpencvDnn, (x1, y1), (x2, y2), (0, 255, 0), int(round(frameHeight/150)), 8)
-
-	conf_threshold = 0.7
-	return faces
+			bboxes.append([x1, y1, x2-x1, y2-y1])
+			# for debug
+			cv2.rectangle(frameOpencvDnn, (x1, y1), (x2, y2), (0, 255, 0), 2, 2)
+	pc.TIME_FACE_DET+=(time.time()-tt)
+	return frameOpencvDnn, bboxes
 
 
 def DeepDetBodyFaces(img,oimg,minsize=0,maxsize=0):   #輸出有身體的大頭照
@@ -232,7 +283,7 @@ def GenImglistFromFace(faces,det_img,org_img,ratio,debug=pc.IS_DEBUG,clip=False)
 	return filted_img,filted_face	
 
 	
-def FilterFrame(org_frame,first_frame,w,h):
+def FilterFrame(org_frame,first_frame,w,h,gray_opt=False):
 	tt=time.time()
 
 	firstframe=cv2.resize(first_frame,(w,h),interpolation=cv2.INTER_AREA)
@@ -248,14 +299,47 @@ def FilterFrame(org_frame,first_frame,w,h):
 	thresh = cv2.dilate(thresh, None, iterations=6)  #膨脹
 	thresh = cv2.dilate(thresh, None, iterations=6)  #膨脹
 	
-	filted_gimg = thresh & gray_img                      #重建去背後的前景(縮圖)	
+	if gray_opt==True:
+		filted_gimg = thresh & gray_img                      #重建去背後的前景(縮圖)	
+	else:
+		filted_gimg = None
 	threshc=cv2.cvtColor(thresh, cv2.COLOR_GRAY2BGR)
 	filted_cimg = threshc & frame                        #重建去背後的前景(縮圖)	
 	
 	pc.TIME_FILTER_FRAME+=(time.time()-tt)
 	return filted_gimg,filted_cimg
 
+
+def FindMotionRect(org_frame,filted_frame):
+	ratioW=org_frame.shape[1] / filted_frame.shape[1]
+	ratioH=org_frame.shape[0] / filted_frame.shape[0]
+	tt=time.time()
+	motion_rect=[]
+	gray = cv2.cvtColor(filted_frame, cv2.COLOR_BGR2GRAY)
+	ret,binary = cv2.threshold(gray, 1, 255, cv2.THRESH_BINARY)
+	(_, cnts, _) = cv2.findContours(binary, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+	#使用Python sorted指令，將所有Contours依面積大小由大至小排列，並僅取前3個。
+	cnts = sorted(cnts, key=cv2.contourArea, reverse=True)[:3]
+
+	for c in cnts:
+		if cv2.contourArea(c) < 1000: continue
+		x, y, w, h = cv2.boundingRect(c) 
+		cv2.rectangle(filted_frame, (x,y), (x+w,y+h), (0,0,255), -2) 
+		x=math.floor(x*ratioW); w=math.floor(w*ratioW);
+		y=math.floor(y*ratioH); h=math.floor(h*ratioH);
+		motion_rect.append(org_frame[y:y+h,x:x+w,::-1]) #BGR2RGB
+		
+	gray = cv2.cvtColor(filted_frame, cv2.COLOR_BGR2GRAY)
+	ret,binary = cv2.threshold(gray, 1, 255, cv2.THRESH_BINARY)
+	binaryc = cv2.cvtColor(binary, cv2.COLOR_GRAY2BGR)
+	binaryc = cv2.resize(binaryc,(org_frame.shape[1],org_frame.shape[0]),interpolation=cv2.INTER_AREA)
+	filted_cimg = binaryc & org_frame
 	
+	
+	pc.TIME_MOTION_DET+=(time.time()-tt)
+	return filted_cimg,motion_rect
+	
+
 def SeetaDetFace(img,oimg,minsize=0,maxsize=0):   #level=1 精準 , 0:嚴謹 (img=縮圖,oimg=原圖)
 	import lib.pyseeta.detector as pd
 	detector = pd.Detector(model_path="lib/pyseeta/model/seeta_fd_frontal_v1.0.bin")
@@ -286,3 +370,49 @@ def SeetaDetBodyFaces(img,oimg,minsize=0,maxsize=0):   #輸出有身體的大頭
 	#for gg in imgs:
 	#	ShowImgIfWinOS(gg)
 	return imgs,faces,scores
+
+
+
+'''
+def CvDNNDetFace(img,oimg,CVscaleFactor=1.1,CVminNeighbors=1,minsize=0,maxsize=0):
+	global cvdnn
+	modelFile = "./lib/model/opencv_face_detector_uint8.pb"
+	configFile = "./lib/model/opencv_face_detector.pbtxt"
+	if cvdnn==None:
+		cvdnn = cv2.dnn.readNetFromTensorflow(modelFile, configFile)
+	conf_threshold = 0.7
+	
+	frameOpencvDnn = img.copy()
+	#frameOpencvDnn = cv2.cvtColor(frameOpencvDnn,cv2.COLOR_BGR2GRAY)
+	frameHeight = frameOpencvDnn.shape[0]
+	frameWidth = frameOpencvDnn.shape[1]
+	blob = cv2.dnn.blobFromImage(frameOpencvDnn, 1.5, (256, 144), [104, 117, 123], False, False)
+
+	cvdnn.setInput(blob)
+	detections = cvdnn.forward()
+	faces = []
+	for i in range(detections.shape[2]):
+		confidence = detections[0, 0, i, 2]
+		if confidence > conf_threshold:
+			x1 = int(detections[0, 0, i, 3] * frameWidth)
+			y1 = int(detections[0, 0, i, 4] * frameHeight)
+			x2 = int(detections[0, 0, i, 5] * frameWidth)
+			y2 = int(detections[0, 0, i, 6] * frameHeight)
+			faces.append([x1, y1, x2, y2])
+			#cv2.rectangle(frameOpencvDnn, (x1, y1), (x2, y2), (0, 255, 0), int(round(frameHeight/150)), 8)
+
+	conf_threshold = 0.7
+	return faces
+'''
+
+'''
+def CvDetBodyFaces(img,oimg,CVscaleFactor=1.1,CVminNeighbors=1,minsize=0,maxsize=0):   #輸出有身體的大頭照
+	tt=time.time()
+	faces=CvDetFace(img,img,CVscaleFactor,CVminNeighbors,minsize,maxsize)
+	ratio=oimg.shape[0]//img.shape[0]
+	imgs,faces=GenImglistFromFace(faces,img,oimg,ratio)
+	#for gg in imgs:
+	#	ShowImgIfWinOS(gg)
+	pc.TIME_FACE_DET+=(time.time()-tt)
+	return imgs,faces
+'''

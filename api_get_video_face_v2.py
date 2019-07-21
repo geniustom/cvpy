@@ -25,7 +25,7 @@ face_score=0.5
 modelFile = "lib/model/opencv_face_detector_uint8.pb"
 configFile = "lib/model/opencv_face_detector.pbtxt"
 net=None
-P1_DEFAULT="./test_video/t11.flv"  #"SWC002s9DYhh_20190307_0292.flv" #"SWC002s9DYhh_20181129_0618.flv" #"SWC002s9DYhh_20190123_0578.flv" "SWC002s9DYhh_20190124_0208"
+P1_DEFAULT="./test_video/red1.mp4"  #"SWC002s9DYhh_20190307_0292.flv" #"SWC002s9DYhh_20181129_0618.flv" #"SWC002s9DYhh_20190123_0578.flv" "SWC002s9DYhh_20190124_0208"
 P2_DEFAULT="./queue_folder/home/Output.jpg"
 P3_DEFAULT="6000"
 
