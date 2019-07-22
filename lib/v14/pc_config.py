@@ -31,6 +31,7 @@ else:
 
 #以下部分為效能計算評估變數
 ####################################
+TIME_WAIT_FRAME       = 0
 TIME_MOTION_DET       = 0
 TIME_HUMAN_DET        = 0
 TIME_FACE_DET         = 0

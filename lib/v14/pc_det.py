@@ -101,6 +101,7 @@ def IsPerson(img,level=0,score=0.5):
 
 def CvDetBodyFaces(img,oimg,CVscaleFactor=1.1,CVminNeighbors=1,minsize=0,maxsize=0):   #輸出有身體的大頭照
 	tt=time.time()
+	
 	imgs=[]
 	faces=[]
 	f=CvDetFace(img,img,CVscaleFactor,CVminNeighbors,minsize,maxsize)
@@ -133,8 +134,8 @@ def CvDetBodyFaces(img,oimg,CVscaleFactor=1.1,CVminNeighbors=1,minsize=0,maxsize
 
 def CvDetFace(img,oimg,CVscaleFactor=1.1,CVminNeighbors=1,minsize=0,maxsize=0):
 	global faceCascade
-	cascPath="./lib/model/lbpcascade_frontalface.xml"  #目前速度最快
-	#cascPath="./lib/model/haarcascade_frontalface_alt2.xml"  #折衷
+	#cascPath="./lib/model/lbpcascade_frontalface.xml"  #目前速度最快
+	cascPath="./lib/model/haarcascade_frontalface_alt2.xml"  #折衷
 	#cascPath="./lib/model/haarcascade_frontalface_alt.xml"  #目前最準
 	if faceCascade==None:
 		faceCascade = cv2.CascadeClassifier(cascPath)
@@ -310,19 +311,22 @@ def FilterFrame(org_frame,first_frame,w,h,gray_opt=False):
 	return filted_gimg,filted_cimg
 
 
-def FindMotionRect(org_frame,filted_frame):
+def FindMotionRect(org_frame,filted_frame,motion_size): #size_thresh 0~1 浮點數,代表有效的motion block面積占比, 0.1 代表 1/10以上面積的motion才會偵測
+	tt=time.time()
+	
 	ratioW=org_frame.shape[1] / filted_frame.shape[1]
 	ratioH=org_frame.shape[0] / filted_frame.shape[0]
-	tt=time.time()
+	motion_size=filted_frame.shape[1]*filted_frame.shape[0]*motion_size
 	motion_rect=[]
 	gray = cv2.cvtColor(filted_frame, cv2.COLOR_BGR2GRAY)
 	ret,binary = cv2.threshold(gray, 1, 255, cv2.THRESH_BINARY)
 	(_, cnts, _) = cv2.findContours(binary, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 	#使用Python sorted指令，將所有Contours依面積大小由大至小排列，並僅取前3個。
-	cnts = sorted(cnts, key=cv2.contourArea, reverse=True)[:3]
+	cnts = sorted(cnts, key=cv2.contourArea, reverse=True)
 
 	for c in cnts:
-		if cv2.contourArea(c) < 1000: continue
+		#print (motion_size,cv2.contourArea(c) )
+		if cv2.contourArea(c) < motion_size: continue
 		x, y, w, h = cv2.boundingRect(c) 
 		cv2.rectangle(filted_frame, (x,y), (x+w,y+h), (0,0,255), -2) 
 		x=math.floor(x*ratioW); w=math.floor(w*ratioW);
