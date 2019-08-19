@@ -20,12 +20,10 @@ Note:
 ##################### 可變動參數區 #####################
 #192,108 #320,180 #144,81 #96,54 #120,68 #160,90 #1280,720 #960,540 #640,360 #480,270
 pw,ph=	96,54	#做motion block的大小	 
-#sw,sh= 640,360	#做FACE DETECTION的大小
-sw,sh= 1280,720	#做FACE DETECTION的大小
-#sw,sh= 1920,1080	#做FACE DETECTION的大小
-face_score=0.1	#最低可允許的人臉分數
+sw,sh= 640,360	#做FACE DETECTION的大小
+face_score=0.3	#最低可允許的人臉分數
 motion_size=0.05 	#0~1 浮點數,代表有效的motion block面積占比, 0.1 代表 1/10以上面積的motion才會偵測
-frame_step = 3
+frame_step = 2
 ########################################################
 
 P1_DEFAULT="./test_video/red1.mp4"  #"./test_video/red1.mp4" "rtmp://104.155.222.173:1936/live/SWB000k6RnxS" #"SWC002s9DYhh_20190307_0292.flv" #"SWC002s9DYhh_20181129_0618.flv" #"SWC002s9DYhh_20190123_0578.flv" "SWC002s9DYhh_20190124_0208"
