@@ -44,64 +44,66 @@ def CliCommand(cmd,cb=None):
 MSG_USAGE = "migrate"
 optParser = OptionParser(MSG_USAGE)
 optParser.add_option("-s","--sn", action = "store", type = "string", dest = "sn")
-optParser.add_option("-f","--from", action = "store", type = "int", dest = "fromtime")
+optParser.add_option("-f","--from", action = "store", type = "int", dest = "fromtime",default=0)
+optParser.add_option("-c","--comment", action = "store", type = "string", dest = "comment")
+optParser.add_option("-p","--path", action = "store", type = "string", dest = "path")
 (options, args) = optParser.parse_args()
 print( options)
 
+fromtime=0
 sn=options.sn
 fromtime=options.fromtime
-
-
-with open('output.csv', 'a', newline='') as csvfile:
+comment=options.comment
+path=options.path
+csvpath=path+comment
+with open(csvpath, 'a', newline='') as csvfile:
     writer=csv.writer(csvfile)
-    writer.writerow(['time','resolution','got_face_cost','got_face','got_id_cost','got_id'])
-
-
-for dirPath, dirNames, fileNames in os.walk("/home/tommy/vca-facerecog/src/cvpy/queue_folder/home"):
-
-    print ("%s"%dirPath)
-    for f in sorted(fileNames):
-        filename, file_extension = os.path.splitext(f)
-        if file_extension == ".flv":
-            fsplit = filename.split("-")
-            get_face_start_time=time.time()
-            if fsplit[0] != sn:
-                continue
-            print (fsplit[0],fsplit[1])
-            ev_time=int(fsplit[1])
-            if ev_time<fromtime:
-               continue
-
-            cli = CliCommand("python ./api_get_video_face_v3.py /home/tommy/vca-facerecog/src/cvpy/queue_folder/home/%s-%s.flv /home/tommy/vca-facerecog/src/cvpy/queue_folder/home/%s-%s.jpg 6000"%(fsplit[0],fsplit[1],fsplit[0],fsplit[1]))
-            get_face_end_time=time.time()
-
-            got_face=0
-            with open('output.csv', 'a', newline='') as csvfile:
-                writer=csv.writer(csvfile)
+    writer.writerow(['time','label','got_face_cost','got_face','got_id_cost','got_id'])
+    
+    for dirPath, dirNames, fileNames in os.walk(path):
+    
+        print ("%s"%dirPath)
+        for f in sorted(fileNames):
+            filename, file_extension = os.path.splitext(f)
+            if file_extension == ".flv":
+                fsplit = filename.split("-")
+                get_face_start_time=time.time()
+                if fsplit[0] != sn:
+                    continue
+                print (fsplit[0],fsplit[1],fsplit[2])
+                ev_time=int(fsplit[1])
+                label=fsplit[2]
+                if fromtime > 0 and ev_time<fromtime:
+                   continue
+    
+                cli = CliCommand("python ./api_get_video_face_v3.py %s/%s-%s.flv %s/%s-%s.jpg 6000"%(path,fsplit[0],fsplit[1],path,fsplit[0],fsplit[1]))
+                get_face_end_time=time.time()
+    
+                got_face=0
                 getface = json.loads(cli)
-                if getface['face_detected']:
+                if getface['face_detected'] is True:
                     print("%s got face"%(f))
                 else:
-                    writer.writerow([ev_time,'1280x720',round(get_face_end_time-get_face_start_time,1),got_face,0,'0'])
+                    writer.writerow([ev_time,label,round(get_face_end_time-get_face_start_time,1),got_face,0,'0'])
                     continue
-
-                cli= CliCommand("python /home/tommy/vca-facerecog/src/cvpy/api_face_recogn.py /home/tommy/vca-facerecog/src/cvpy/face_cache/home.json /home/tommy/vca-facerecog/src/cvpy/queue_folder/home/%s-%s.jpg /home/tommy/vca-facerecog/src/cvpy/queue_folder/home/%s-%s-hit.jpg"%(fsplit[0],fsplit[1],fsplit[0],fsplit[1]))
-
+    
+                cli= CliCommand("python /home/tommy/vca-facerecog/src/cvpy/api_face_recogn.py /home/tommy/vca-facerecog/src/cvpy/face_cache/home.json %s/%s-%s.jpg %s/%s-%s-hit.jpg"%(path,fsplit[0],fsplit[1],path,fsplit[0],fsplit[1]))
+    
                 get_id_end_time=time.time()
                 getid = json.loads(cli)
-
+    
                 print(getid)
                 
                 if getface['face_detected'] is True:
                     got_face=1
-
+    
                 if len(getid['detected'])>0:
                     print("%s got %s"%(f,getid['detected'][0]))
-                    writer.writerow([ev_time,'1280x720',round(get_face_end_time-get_face_start_time,1),got_face,round(get_id_end_time-get_face_end_time,1),getid['detected'][0]])
+                    writer.writerow([ev_time,label,round(get_face_end_time-get_face_start_time,1),got_face,round(get_id_end_time-get_face_end_time,1),getid['detected'][0]])
                 else:
                     print("got anybody")
-                    writer.writerow([ev_time,'1280x720',round(get_face_end_time-get_face_start_time,1),got_face,round(get_id_end_time-get_face_end_time,1),'0'])
+                    writer.writerow([ev_time,label,round(get_face_end_time-get_face_start_time,1),got_face,round(get_id_end_time-get_face_end_time,1),'0'])
          
          
-
-
+    
+    
