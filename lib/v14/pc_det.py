@@ -99,12 +99,12 @@ def IsPerson(img,level=0,score=0.5):
 
 
 
-def CvDetBodyFaces(img,oimg,CVscaleFactor=1.1,CVminNeighbors=1,minsize=0,maxsize=0):   #輸出有身體的大頭照
+def CvDetBodyFaces(img,oimg,CVscaleFactor=1.1,CVminNeighbors=1,minsize=0,maxsize=0,casc_level=1):   #輸出有身體的大頭照
 	tt=time.time()
 	
 	imgs=[]
 	faces=[]
-	f=CvDetFace(img,img,CVscaleFactor,CVminNeighbors,minsize,maxsize)
+	f=CvDetFace(img,img,CVscaleFactor,CVminNeighbors,minsize,maxsize,casc_level)
 	rt=oimg.shape[0]//img.shape[0]
 	oh,ow=oimg.shape[0],oimg.shape[1]
 	#''' 標準大頭照
@@ -132,11 +132,12 @@ def CvDetBodyFaces(img,oimg,CVscaleFactor=1.1,CVminNeighbors=1,minsize=0,maxsize
 	return imgs,faces
 
 
-def CvDetFace(img,oimg,CVscaleFactor=1.1,CVminNeighbors=1,minsize=0,maxsize=0):
+def CvDetFace(img,oimg,CVscaleFactor=1.1,CVminNeighbors=1,minsize=0,maxsize=0,casc_level=1):
 	global faceCascade
-	#cascPath="./lib/model/lbpcascade_frontalface.xml"  #目前速度最快
-	cascPath="./lib/model/haarcascade_frontalface_alt2.xml"  #折衷
-	#cascPath="./lib/model/haarcascade_frontalface_alt.xml"  #目前最準
+	if casc_level==0:		cascPath="./lib/model/lbpcascade_frontalface.xml"  #目前速度最快
+	elif casc_level==1:	cascPath="./lib/model/haarcascade_frontalface_alt2.xml"  #折衷
+	else:					cascPath="./lib/model/haarcascade_frontalface_alt.xml"  #目前最準
+		
 	if faceCascade==None:
 		faceCascade = cv2.CascadeClassifier(cascPath)
 	ratio=oimg.shape[0]//img.shape[0]

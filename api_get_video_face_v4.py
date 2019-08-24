@@ -19,17 +19,18 @@ Note:
 
 ##################### 可變動參數區 #####################
 #192,108 #320,180 #144,81 #96,54 #120,68 #160,90 #1280,720 #960,540 #640,360 #480,270
-pw,ph=	96,54	#做motion block的大小	 
+pw,ph=	96,54	 	#做motion block的大小	 
 sw,sh= 1920,1080	#做FACE DETECTION的大小
 face_score=0.5	#最低可允許的人臉分數
 motion_size=0.2 	#0~1 浮點數,代表有效的motion block面積占比, 0.1 代表 1/10以上面積的motion才會偵測
-frame_step = 1
-detect_cold_down = 2
-face_height_ratio_min=20	# 能偵測到最小的臉,佔畫面高度的 1/x 倍
+frame_step = 1	#每隔多少個frame偵測一次
+#detect_cold_down = 2			#偵測到品質夠好的臉後,在多少個frame內不再偵測,以節省運算資源
+face_height_ratio_min=20	#能偵測到最小的臉,佔畫面高度的 1/x 倍
 face_height_ratio_max=2		#能偵測到最大的臉,佔畫面高度的 1/x 倍
+casc_level=0					#分類器  0: 鬆散高速 ,1: 中等 , 2: 嚴謹慢速
 ########################################################
 
-P1_DEFAULT="./unit_test/SWB000mgLbUm-1566264676-Jerry.flv"  #"./test_video/red1.mp4" "rtmp://104.155.222.173:1936/live/SWB000k6RnxS" #"SWC002s9DYhh_20190307_0292.flv" #"SWC002s9DYhh_20181129_0618.flv" #"SWC002s9DYhh_20190123_0578.flv" "SWC002s9DYhh_20190124_0208"
+P1_DEFAULT="./unit_test/SWB000mgLbUm-1566269198-Edward.flv"  #"./test_video/red1.mp4" "rtmp://104.155.222.173:1936/live/SWB000k6RnxS" #"SWC002s9DYhh_20190307_0292.flv" #"SWC002s9DYhh_20181129_0618.flv" #"SWC002s9DYhh_20190123_0578.flv" "SWC002s9DYhh_20190124_0208"
 P2_DEFAULT="./queue_folder/home/Output.jpg"
 P3_DEFAULT="500"
 
@@ -108,7 +109,7 @@ def api(P1,P2,P3):
 			for m in motion_rect:
 				#pu.ShowImgIfWinOS(m)
 				#sframe,imgs, bboxes = pd.CVDnnDetBodyFaces(m,m)	#dnn 作法
-				imgs,bboxes=pd.CvDetBodyFaces(m,m,CVminNeighbors=3,minsize=det_size_min,maxsize=det_size_max)	#haar 作法 face+body
+				imgs,bboxes=pd.CvDetBodyFaces(m,m,CVminNeighbors=3,minsize=det_size_min,maxsize=det_size_max,casc_level=casc_level)	 #haar 作法 face+body
 				#imgs,bboxes=pd.DeepDetBodyFaces(m,m)	#haar 作法 face+body
 				motion_bboxes=motion_bboxes+bboxes
 				motion_imgs=motion_imgs+imgs
