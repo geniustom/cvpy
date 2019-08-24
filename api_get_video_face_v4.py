@@ -23,14 +23,14 @@ pw,ph=	96,54	 	#做motion block的大小
 sw,sh= 1920,1080	#做FACE DETECTION的大小
 face_score=0.5	#最低可允許的人臉分數
 motion_size=0.2 	#0~1 浮點數,代表有效的motion block面積占比, 0.1 代表 1/10以上面積的motion才會偵測
-frame_step = 1	#每隔多少個frame偵測一次
-#detect_cold_down = 2			#偵測到品質夠好的臉後,在多少個frame內不再偵測,以節省運算資源
+frame_step = 2	#每隔多少個frame偵測一次 (1~2)
+noface_cold_down = 2			#偵測不到臉時,在多少個frame內不再偵測,以節省運算資源 (0~2)
 face_height_ratio_min=20	#能偵測到最小的臉,佔畫面高度的 1/x 倍
 face_height_ratio_max=2		#能偵測到最大的臉,佔畫面高度的 1/x 倍
-casc_level=0					#分類器  0: 鬆散高速 ,1: 中等 , 2: 嚴謹慢速
+casc_level=2					#分類器  0: 鬆散高速 ,1: 中等 , 2: 嚴謹慢速
 ########################################################
 
-P1_DEFAULT="./unit_test/SWB000mgLbUm-1566269198-Edward.flv"  #"./test_video/red1.mp4" "rtmp://104.155.222.173:1936/live/SWB000k6RnxS" #"SWC002s9DYhh_20190307_0292.flv" #"SWC002s9DYhh_20181129_0618.flv" #"SWC002s9DYhh_20190123_0578.flv" "SWC002s9DYhh_20190124_0208"
+P1_DEFAULT="./unit_test/SWB000mgLbUm-1566306233-Red.flv"  #"./test_video/red1.mp4" "rtmp://104.155.222.173:1936/live/SWB000k6RnxS" #"SWC002s9DYhh_20190307_0292.flv" #"SWC002s9DYhh_20181129_0618.flv" #"SWC002s9DYhh_20190123_0578.flv" "SWC002s9DYhh_20190124_0208"
 P2_DEFAULT="./queue_folder/home/Output.jpg"
 P3_DEFAULT="500"
 
@@ -77,6 +77,7 @@ def api(P1,P2,P3):
 		hasFrame, frame = cap.read()
 		#vid_writer = cv2.VideoWriter('output-dnn-{}.avi'.format(str(source).split(".")[0]),cv2.VideoWriter_fourcc('M','J','P','G'), 15, (frame.shape[1],frame.shape[0]))
 		frame_count = 0
+		frame_skip = 0
 		tt_opencvDnn = 0
 		start_ts=time.time()
 		while(frame_count<int(P3)):
@@ -89,7 +90,8 @@ def api(P1,P2,P3):
 	#				background_frame=first_frame #background 每 30 frames refresh一次
 	#				first_frame=frame
 			frame_count += 1
-			if frame_count%frame_step!=0: continue
+			if frame_count<frame_skip: continue
+			frame_skip+=frame_step
 	
 			t = time.time()
 			# Convert the image from BGR color (which OpenCV uses) to RGB color (which face_recognition uses)
@@ -99,7 +101,7 @@ def api(P1,P2,P3):
 			#sframe = cv2.cvtColor(sframe,cv2.COLOR_BGR2GRAY)
 			#------- 去除背景
 			cut_frame = cv2.resize(frame,(sw,sh),interpolation=cv2.INTER_AREA)
-			gframe,cframe=pd.FilterFrame(frame,first_frame,pw,ph)
+			gframe,cframe=pd.FilterFrame(frame,first_frame,pw,ph,dilate_cnt=2,iterations=6)
 			cframe,motion_rect=pd.FindMotionRect(cut_frame,cframe,motion_size)
 			#motion_rect=[cut_frame]
 			#-------
@@ -109,7 +111,7 @@ def api(P1,P2,P3):
 			for m in motion_rect:
 				#pu.ShowImgIfWinOS(m)
 				#sframe,imgs, bboxes = pd.CVDnnDetBodyFaces(m,m)	#dnn 作法
-				imgs,bboxes=pd.CvDetBodyFaces(m,m,CVminNeighbors=3,minsize=det_size_min,maxsize=det_size_max,casc_level=casc_level)	 #haar 作法 face+body
+				imgs,bboxes=pd.CvDetBodyFaces(m,m,CVminNeighbors=2,minsize=det_size_min,maxsize=det_size_max,casc_level=casc_level)	 #haar 作法 face+body
 				#imgs,bboxes=pd.DeepDetBodyFaces(m,m)	#haar 作法 face+body
 				motion_bboxes=motion_bboxes+bboxes
 				motion_imgs=motion_imgs+imgs
@@ -126,10 +128,11 @@ def api(P1,P2,P3):
 			#cv2.imshow("Face Detection Comparison", frame)
 			#vid_writer.write(frame)
 			if frame_count == 1: tt_opencvDnn = 0
+			if len(imgs)==0: frame_skip+=noface_cold_down
 	
 	
 		det_time=time.time()
-		have_face,best_img,best_score = pd.DlibGetBestFace(totalimgs,score=face_score,level=1,debug=False)
+		have_face,best_img,best_score = pd.DlibGetBestFaceV2(totalimgs,score=face_score,level=1,debug=False)
 		if have_face:
 			pu.ShowImgIfWinOS(best_img)
 			nimg=ClipBestFace(best_img)

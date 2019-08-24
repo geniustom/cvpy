@@ -78,7 +78,64 @@ def DlibGetBestFace(imgs,score=1,level=0,debug=pc.IS_DEBUG):
 	
 	pc.TIME_BEST_FACE+=(time.time()-tt)
 	return have_face,best_img,best_score
+
+def DlibGetBestFaceV2(imgs,score=1,level=0,debug=pc.IS_DEBUG):
+	tt=time.time()
+	#獲取比較全面的資訊，如獲取人臉與detector的匹配程度
+
+	best_score=score
+	best_img=None
+	have_face=False
+	best_idx=0
 	
+	scores=[]
+	idxs=[]
+	goodFace=[]
+	lite_imgs=[]
+	
+	for i in range(len(imgs)):
+		lh,lw=imgs[i].shape[0],imgs[i].shape[1]
+		if lw>100:
+			rt=100/lw
+			lite_img = cv2.resize(imgs[i],(100,math.floor(lh*rt)),interpolation=cv2.INTER_AREA)
+			lite_imgs.append(lite_img)
+		else:
+			lite_imgs.append(imgs[i])
+	
+	for i in range(len(lite_imgs)):
+		det, sco, idx = detector.run(lite_imgs[i], level,-1)
+		if len(det)==0 : continue  #沒有臉要排除
+		if len(det)>1 : continue   #一張圖有2張臉要排除
+		if idx[0]==3 : continue    #idx=3代表人臉角度太斜要排除
+		if sco[0]<score: continue  #低於門檻要排除
+		if debug: print("face: {}, score: {}, face_type:{}".format(len(det),sco[0], idx[0]))
+		scores.append(sco[0])
+		idxs.append(idx[0])
+		goodFace.append(imgs[i])
+	
+	GoodQuility=False
+	for i in range(len(scores)):
+		if scores[i]>1 and idxs[i]==0: GoodQuility=True
+
+	for i in range(len(scores)):
+		if (scores[i]>best_score) and ((GoodQuility==False) or (GoodQuility==True and idxs[i]==0)):
+				best_img=goodFace[i]
+				best_score=scores[i]
+				best_idx=idxs[i]
+				have_face=True		
+				
+	if debug:
+		if have_face:
+			print("best score:",best_score," ,best idx:",best_idx)
+			pu.ShowImgIfWinOS(best_img)
+		else:
+			pu.ShowImgIfWinOS(imgs[0])
+	
+	pc.TIME_BEST_FACE+=(time.time()-tt)
+	return have_face,best_img,best_score
+
+
+
 def IsPerson(img,level=0,score=0.5):
 	tt=time.time()
 	#faces=DlibDetFace(img,img,level)
@@ -285,7 +342,7 @@ def GenImglistFromFace(faces,det_img,org_img,ratio,debug=pc.IS_DEBUG,clip=False)
 	return filted_img,filted_face	
 
 	
-def FilterFrame(org_frame,first_frame,w,h,gray_opt=False):
+def FilterFrame(org_frame,first_frame,w,h,gray_opt=False,dilate_cnt=3,iterations=6):
 	tt=time.time()
 
 	firstframe=cv2.resize(first_frame,(w,h),interpolation=cv2.INTER_AREA)
@@ -297,9 +354,9 @@ def FilterFrame(org_frame,first_frame,w,h,gray_opt=False):
 
 	thresh = cv2.threshold(imgDelta, 30, 255, cv2.THRESH_BINARY)[1]  #二值化
 	thresh = cv2.erode(thresh, None, iterations=2)  #消蝕
-	thresh = cv2.dilate(thresh, None, iterations=6)  #膨脹
-	thresh = cv2.dilate(thresh, None, iterations=6)  #膨脹
-	thresh = cv2.dilate(thresh, None, iterations=6)  #膨脹
+	for i in range(dilate_cnt):
+		thresh = cv2.dilate(thresh, None, iterations=iterations)  #膨脹
+
 	
 	if gray_opt==True:
 		filted_gimg = thresh & gray_img                      #重建去背後的前景(縮圖)	
