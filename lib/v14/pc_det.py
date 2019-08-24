@@ -48,7 +48,7 @@ def DlibGetBestFace(imgs,score=1,level=0,debug=pc.IS_DEBUG):
 	idxs=[]
 	goodFace=[]
 	for i in range(len(imgs)):
-		det, sco, idx = detector.run(imgs[i], level)
+		det, sco, idx = detector.run(imgs[i], level,-1)
 		if len(det)==0 : continue  #沒有臉要排除
 		if len(det)>1 : continue   #一張圖有2張臉要排除
 		if idx[0]==3 : continue    #idx=3代表人臉角度太斜要排除
