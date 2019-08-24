@@ -70,9 +70,14 @@ with open(csvpath, 'a', newline='') as csvfile:
                 get_face_start_time=time.time()
                 if fsplit[0] != sn:
                     continue
-                print (fsplit[0],fsplit[1],fsplit[2])
                 ev_time=int(fsplit[1])
-                label=fsplit[2]
+                label=""
+                if len(fsplit)>=3:
+                    print (fsplit[0],fsplit[1],fsplit[2])
+                    label=fsplit[2]
+                else:
+                    print (fsplit[0],fsplit[1])
+
                 if fromtime > 0 and ev_time<fromtime:
                    continue
     
