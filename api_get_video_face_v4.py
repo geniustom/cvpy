@@ -30,7 +30,7 @@ face_height_ratio_max=2		#能偵測到最大的臉,佔畫面高度的 1/x 倍
 casc_level=2					#分類器  0: 鬆散高速 ,1: 中等 , 2: 嚴謹慢速
 ########################################################
 
-P1_DEFAULT="./unit_test/SWB000mgLbUm-1566306233-Red.flv"  #"./test_video/red1.mp4" "rtmp://104.155.222.173:1936/live/SWB000k6RnxS" #"SWC002s9DYhh_20190307_0292.flv" #"SWC002s9DYhh_20181129_0618.flv" #"SWC002s9DYhh_20190123_0578.flv" "SWC002s9DYhh_20190124_0208"
+P1_DEFAULT="./unit_test/SWB000mgLbUm-1566178576.flv"  #"./test_video/red1.mp4" "rtmp://104.155.222.173:1936/live/SWB000k6RnxS" #"SWC002s9DYhh_20190307_0292.flv" #"SWC002s9DYhh_20181129_0618.flv" #"SWC002s9DYhh_20190123_0578.flv" "SWC002s9DYhh_20190124_0208"
 P2_DEFAULT="./queue_folder/home/Output.jpg"
 P3_DEFAULT="500"
 
