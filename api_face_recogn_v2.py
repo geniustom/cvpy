@@ -156,11 +156,11 @@ def get_face_profile_single_person(face_names,face_vectors,face_id_lists,test_fa
 	fid=""
 	conf=np.round(1-face_distance(face_vectors, test_encodings[0]),3)
 	conf_sort=np.sort(conf)[::-1] #sort後反轉,相當於由大到小排序
-	print(conf_sort)
+	#print(conf_sort)
 	max_conf=0
 	max_conf_name=""
 	for i in range(len(conf)):
-		print(face_names[i],conf[i])
+		#print(face_names[i],conf[i])
 		if conf[i]>max_conf:
 			max_conf=conf[i]
 			max_conf_name=face_names[i]
@@ -174,7 +174,7 @@ def get_face_profile_single_person(face_names,face_vectors,face_id_lists,test_fa
 		#elif (max_conf<confidence) and (max_conf<1.5*np.std(conf)+np.mean(conf)) :	name="?"
 
 	result_person.append(name)
-	print(np.std(conf),np.mean(conf))
+	#print(np.std(conf),np.mean(conf))
 	return result_person,max_conf,max_conf_name
 
 def face_distance(face_encodings, face_to_compare):
