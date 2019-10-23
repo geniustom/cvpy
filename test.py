@@ -72,7 +72,7 @@ if not os.path.exists(path+"positive"):
     os.mkdir(path+"positive")
 
 with open(csvpath, 'a', newline='') as csvfile:
-    writer=csv.writer(csvfile)
+    writer=csv.writer(csvfile,quotechar = "'")
     writer.writerow(['url','time','face_score','got_face_cost','got_face','got_id_cost','got_id'])
     
 for dirPath, dirNames, fileNames in os.walk(path):
@@ -102,7 +102,7 @@ for dirPath, dirNames, fileNames in os.walk(path):
                 get_face_end_time=time.time()
                 print(cli)
     
-                facejpgUrl="http://35.201.225.82:8080/image/%s"%(dstjpg)
+                facejpgUrl="=IMAGE(\"http://35.201.225.82:8080/image/%s\")"%(dstjpg)
     
                 got_face=0
                 getface = json.loads(cli)
@@ -110,7 +110,7 @@ for dirPath, dirNames, fileNames in os.walk(path):
                     print("%s got face"%(f))
                 else:
                     with open(csvpath, 'a', newline='') as csvfile:
-                        writer=csv.writer(csvfile)
+                        writer=csv.writer(csvfile,quotechar = "'")
                         writer.writerow([facejpgUrl,ev_time,getface['face_score'],round(get_face_end_time-get_face_start_time,1),got_face,0,'0'])
                     continue
     
@@ -129,19 +129,19 @@ for dirPath, dirNames, fileNames in os.walk(path):
                     idjpg="%s-%s-%s-%s.jpg"%(fsplit[0],fsplit[1],time_string,getid['detected'][0])
                     idjpgPath="%s/%s"%(path,idjpg)
                     copyfile(hitjpgPath,idjpgPath)
-                    hitfacejpgUrl="http://35.201.225.82:8080/image/%s"%(idjpg)
+                    hitfacejpgUrl="=IMAGE(\"http://35.201.225.82:8080/image/%s\")"%(idjpg)
                     print("%s got %s"%(f,getid['detected'][0]))
                     with open(csvpath, 'a', newline='') as csvfile:
-                        writer=csv.writer(csvfile)
+                        writer=csv.writer(csvfile,quotechar = "'")
                         writer.writerow([hitfacejpgUrl,ev_time,getface['face_score'],round(get_face_end_time-get_face_start_time,1),got_face,round(get_id_end_time-get_face_end_time,1),getid['detected'][0]])
     
                     folder1="%s/positive/%s"%(path,idjpg)
                     copyfile(hitjpgPath,folder1)
                 else:
-                    hitfacejpg="http://35.201.225.82:8080/image/%s-%s-%s-?.jpg"%(fsplit[0],fsplit[1],time_string)
+                    hitfacejpg="=IMAGE(\"http://35.201.225.82:8080/image/%s-%s-%s-?.jpg\")"%(fsplit[0],fsplit[1],time_string)
                     print("got anybody")
                     with open(csvpath, 'a', newline='') as csvfile:
-                        writer=csv.writer(csvfile)
+                        writer=csv.writer(csvfile,quotechar = "'")
                         writer.writerow([hitfacejpg,ev_time,getface['face_score'],round(get_face_end_time-get_face_start_time,1),got_face,round(get_id_end_time-get_face_end_time,1),'0'])
          
                     folder2="%s/negtive/%s-%s-%s-?.jpg"%(path,fsplit[0],fsplit[1],time_string)
@@ -164,10 +164,10 @@ for dirPath, dirNames, fileNames in os.walk(path):
                 hitfacejpg="%s-%s-%s-%s.jpg"%(fsplit[0],fsplit[1],fsplit[2],getid['detected'][0])
                 hitfacejpgPath="%s/%s.jpg"%(path,hitfacejpg)
                 os.rename(hitjpg,hitfacejpg)
-                hitfacejpgURL="http://35.201.225.82:8080/image/%s"%(hitfacejpg)
+                hitfacejpgURL="=IMAGE(\"http://35.201.225.82:8080/image/%s\")"%(hitfacejpg)
                 print("%s got %s"%(f,getid['detected'][0]))
                 with open(csvpath, 'a', newline='') as csvfile:
-                    writer=csv.writer(csvfile)
+                    writer=csv.writer(csvfile,quotechar = "'")
                     writer.writerow([hitfacejpgURL,ev_time,getface['face_score'],round(get_face_end_time-get_face_start_time,1),1,round(get_id_end_time-get_face_end_time,1),getid['detected'][0]])
 
                 positive_folder="%s/positive/%s"%(path,hitfacejpg)

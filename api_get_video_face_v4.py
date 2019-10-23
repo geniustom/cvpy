@@ -21,11 +21,11 @@ Note:
 #192,108 #320,180 #144,81 #96,54 #120,68 #160,90 #1280,720 #960,540 #640,360 #480,270
 pw,ph=	96,54	 	#做motion block的大小	 
 sw,sh= 1920,1080	#做FACE DETECTION的大小
-face_score=0.5	#最低可允許的人臉分數
+face_score=0.5  	#最低可允許的人臉分數
 motion_size=0.2 	#0~1 浮點數,代表有效的motion block面積占比, 0.1 代表 1/10以上面積的motion才會偵測
 frame_step = 2	#每隔多少個frame偵測一次 (1~2)
 noface_cold_down = 2			#偵測不到臉時,在多少個frame內不再偵測,以節省運算資源 (0~2)
-face_height_ratio_min=20	#能偵測到最小的臉,佔畫面高度的 1/x 倍
+face_height_ratio_min=15	#能偵測到最小的臉,佔畫面高度的 1/x 倍
 face_height_ratio_max=2		#能偵測到最大的臉,佔畫面高度的 1/x 倍
 casc_level=2					#分類器  0: 鬆散高速 ,1: 中等 , 2: 嚴謹慢速
 ########################################################
